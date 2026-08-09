@@ -1,3 +1,13 @@
+## v0.2.1
+
+- Firestore database structure created
+- Added `clubs`, `locations`, `boats` and `users` collections
+- Added Document References between clubs, locations and boats
+- Added initial test data
+- Deployed initial Firestore security rules
+- Configured public read-only access for club, location and boat data
+- Locked user data pending Firebase Authentication
+
 ## v0.2.0 — UI Prototype
 
 ### Added
