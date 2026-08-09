@@ -21,14 +21,20 @@ The following Firestore collections are currently implemented:
 - `locations`
 - `boats`
 - `users`
+- `clubLocations`
 
 Test documents have been created to verify the database structure and relationships.
 
 Current relationships include:
 
-- Locations reference a club using a Document Reference.
-- Boats reference a club using a Document Reference.
-- Boats reference a location using a Document Reference.
+- `clubLocations` references a club using a Document Reference.
+- `clubLocations` references a location using a Document Reference.
+- `boats` reference a club using a Document Reference.
+- `boats` reference a location using a Document Reference.
+
+A location is an independent physical rowing location and is not owned by a single club.
+
+Multiple clubs can therefore use the same location through the `clubLocations` relationship.
 
 The following are planned but not yet implemented:
 
@@ -48,6 +54,8 @@ The following are planned but not yet implemented:
 
 The database should:
 
+- Keep physical locations separate from clubs
+- Allow multiple clubs to use the same location
 - Keep club-owned information separate from user-owned information
 - Avoid unnecessary duplication
 - Use Document References for relationships between entities
@@ -56,6 +64,10 @@ The database should:
 - Support different types of rowing locations, including rivers, lakes, canals and reservoirs
 - Support current and future historical environmental data
 - Remain flexible enough to support the recommendation engine
+
+A physical location should exist independently of the clubs that use it.
+
+Club-specific relationships and information should be stored separately from the physical location itself.
 
 ---
 
@@ -69,23 +81,19 @@ Each document represents a rowing club.
 
 ### Current fields
 
-```text
-name
-description
-logoUrl
-createdAt
-updatedAt
-```
+- `name`
+- `description`
+- `logoUrl`
+- `createdAt`
+- `updatedAt`
 
 ### Example
 
-```text
-name: Bedford Rowing Club
-```
+`name`: Bedford Rowing Club
 
-A club can be associated with multiple locations and boats.
+A club can be associated with multiple locations through the `clubLocations` collection.
 
-Club membership and administrator permissions will be implemented later using Firebase Authentication and appropriate Firestore security rules.
+Club membership and administrator permissions will be defined later.
 
 ---
 
@@ -95,76 +103,155 @@ Club membership and administrator permissions will be implemented later using Fi
 
 `locations`
 
-Each document represents a rowing location.
+Each document represents a physical rowing location.
+
+A location is independent of any particular club.
+
+Examples include:
+
+- Rivers
+- Lakes
+- Canals
+- Reservoirs
+- Other rowing waterways
 
 ### Current fields
 
-```text
-name
-waterType
-clubId
-latitude
-longitude
-status
-createdAt
-updatedAt
-```
+- `name`
+- `waterType`
+- `latitude`
+- `longitude`
+- `status`
+- `createdAt`
+- `updatedAt`
 
 ### Field details
 
-`name`  
-The display name of the location.
+`name`
+
+The display name of the physical location.
 
 Example:
 
-```text
 River Great Ouse, Bedford
-```
 
-`waterType`  
+`waterType`
+
 The type of waterway.
 
 Potential values:
 
-```text
-river
-lake
-canal
-reservoir
-other
-```
+- `river`
+- `lake`
+- `canal`
+- `reservoir`
+- `other`
 
-`clubId`  
-A Document Reference to the associated document in the `clubs` collection.
+`latitude` / `longitude`
 
-`latitude` / `longitude`  
-Coordinates used for future weather and environmental API requests. These may currently be left empty until location coordinates are populated.
+Coordinates used for future weather and environmental API requests.
 
-`status`  
-Whether the location is currently active.
+`status`
+
+Whether the physical location is currently active.
 
 Potential values:
 
-```text
-active
-inactive
-```
+- `active`
+- `inactive`
 
-### Example relationship
+### Important design principle
 
-```text
-clubs/{clubId}
-        ↑
-        │ Document Reference
-        │
-locations/{locationId}
-```
+Locations do not contain a `clubId`.
 
-A club may have multiple locations.
+A location can be used by multiple clubs.
+
+The relationship between clubs and locations is handled by the `clubLocations` collection.
 
 ---
 
-## 6. Boats
+## 6. Club Locations
+
+### Collection
+
+`clubLocations`
+
+This collection represents the relationship between a club and a physical location.
+
+It allows multiple clubs to use the same location.
+
+### Current fields
+
+- `clubId`
+- `locationId`
+- `status`
+- `createdAt`
+- `updatedAt`
+
+### Field details
+
+`clubId`
+
+A Document Reference to the associated document in the `clubs` collection.
+
+`locationId`
+
+A Document Reference to the associated document in the `locations` collection.
+
+`status`
+
+The status of the relationship between the club and the location.
+
+Potential values:
+
+- `active`
+- `inactive`
+
+### Example relationship
+
+Club:
+
+Bedford Rowing Club
+
+Location:
+
+River Great Ouse, Bedford
+
+The relationship is represented by a `clubLocations` document with:
+
+- `clubId` → `clubs/{clubId}`
+- `locationId` → `locations/{locationId}`
+
+### Multiple clubs using one location
+
+For example, the same physical location could be associated with multiple clubs:
+
+River Great Ouse, Bedford
+
+- Club A
+- Club B
+- Club C
+
+Each club has its own `clubLocations` document.
+
+This allows the same physical location to be associated with multiple clubs without duplicating the location itself.
+
+### Future possibilities
+
+The `clubLocations` relationship may eventually contain club-specific information such as:
+
+- Launch information
+- Access information
+- Club-specific notes
+- Club-specific hazards
+- Permissions
+- Local rules
+
+These fields will be added when the relevant functionality is implemented.
+
+---
+
+## 7. Boats
 
 ### Collection
 
@@ -174,104 +261,105 @@ Each document represents a boat owned or managed by a club.
 
 ### Current fields
 
-```text
-name
-boatClass
-clubId
-locationId
-availabilityStatus
-weightCategory
-rowingType
-coxed
-bladeType
-createdAt
-updatedAt
-```
+- `name`
+- `boatClass`
+- `clubId`
+- `locationId`
+- `availabilityStatus`
+- `weightCategory`
+- `rowingType`
+- `coxed`
+- `bladeType`
+- `createdAt`
+- `updatedAt`
 
 ### Field details
 
-`name`  
-The current boat name or identifier.
+`name`
+
+The current boat name/identifier.
 
 Example:
 
-```text
 Single 1
-```
 
-`boatClass`  
+`boatClass`
+
 The rowing boat classification.
 
 Examples:
 
-```text
-1x
-4x
-4-
-```
+- `1x`
+- `4x`
+- `4-`
 
-`clubId`  
+`clubId`
+
 A Document Reference to the associated club.
 
-`locationId`  
-A Document Reference to the boat's associated location.
+`locationId`
 
-`availabilityStatus`  
+A Document Reference to the boat's associated physical location.
+
+`availabilityStatus`
+
 Whether the boat is currently available.
 
 Potential values:
 
-```text
-available
-unavailable
-```
+- `available`
+- `unavailable`
 
-`weightCategory`  
+`weightCategory`
+
 The intended rower weight category where applicable. The exact categories will be defined later.
 
-`rowingType`  
+`rowingType`
+
 The type of rowing.
 
 Potential values:
 
-```text
-sculling
-sweep
-```
+- `sculling`
+- `sweep`
 
-`coxed`  
+`coxed`
+
 Boolean indicating whether the boat is coxed.
 
-`bladeType`  
-Information about the blades or blade setup used with the boat.
+`bladeType`
+
+Information about the blades/setup used with the boat.
 
 This field is currently flexible and may become more structured in the future.
+
+### Boat relationships
+
+A boat belongs to a club and is associated with a physical location.
+
+The relationship is:
+
+boats/{boatId}
+
+- `clubId` → `clubs/{clubId}`
+- `locationId` → `locations/{locationId}`
 
 ### Future boat improvements
 
 The Add Boat interface should eventually allow the user to select a standard boat class from a dropdown.
 
-The application should then automatically determine the corresponding boat description and characteristics.
+The application should then automatically determine the corresponding boat description.
 
 For example:
 
-```text
-4x → Quadruple scull, coxless
-4- → Four, coxless
-```
+- `4x` → Quadruple scull, coxless
+- `4-` → Four, coxless
 
 The full boat-class mapping will be defined when the Add Boat functionality is implemented.
 
-Other planned improvements include:
-
-- Favourite boats
-- Club Boats / Favourite Boats toggle
-- More structured blade information
-- Refined rower weight categories
-
 ---
 
-## 7. Users
+## 8. Users
 
 ### Collection
 
@@ -281,50 +369,33 @@ Each document represents a Row Ready user.
 
 ### Current fields
 
-```text
-displayName
-email
-photoUrl
-units
-notificationsEnabled
-createdAt
-updatedAt
-```
-
-Firebase Authentication has not yet been enabled.
-
-User access is therefore currently restricted by the Firestore security rules.
+- `displayName`
+- `email`
+- `photoUrl`
+- `units`
+- `notificationsEnabled`
+- `createdAt`
+- `updatedAt`
 
 Club membership will be designed separately rather than adding a `clubIds` array at this stage.
 
-Future user-specific functionality will include:
-
-- Favourite locations
-- Favourite boats
-- Personal boat notes/reviews
-- User preferences
-
 ---
 
-## 8. User Favourites
+## 9. User Favourites
 
-Favourites are personal to each user and should not modify the underlying club-owned record.
+Favourites are personal to each user and should not modify the underlying club-owned or location-owned record.
 
 ### Favourite locations
 
 Planned structure:
 
-```text
-users/{userId}/favouriteLocations/{locationId}
-```
+`users/{userId}/favouriteLocations/{locationId}`
 
 ### Favourite boats
 
 Planned structure:
 
-```text
-users/{userId}/favouriteBoats/{boatId}
-```
+`users/{userId}/favouriteBoats/{boatId}`
 
 The Boats page should eventually allow users to switch between:
 
@@ -335,7 +406,7 @@ This is particularly useful when clubs have large fleets and users do not want t
 
 ---
 
-## 9. Personal Boat Notes / Reviews
+## 10. Personal Boat Notes / Reviews
 
 Boat notes are private to the individual user.
 
@@ -343,21 +414,17 @@ They are not public club reviews.
 
 ### Planned structure
 
-```text
-users/{userId}/boatNotes/{boatId}
-```
+`users/{userId}/boatNotes/{boatId}`
 
 Potential fields include:
 
-```text
-comfortable
-shoeAdjustment
-stretcherAdjustment
-fit
-notes
-createdAt
-updatedAt
-```
+- `comfortable`
+- `shoeAdjustment`
+- `stretcherAdjustment`
+- `fit`
+- `notes`
+- `createdAt`
+- `updatedAt`
 
 Examples of personal observations:
 
@@ -371,35 +438,35 @@ The exact fields will be refined when this functionality is implemented.
 
 ---
 
-## 10. Environmental Conditions
+## 11. Environmental Conditions
 
 ### Planned collection
 
 `conditions`
 
-Environmental data will eventually be associated with a location and timestamp.
+Environmental data will eventually be associated with a physical location and timestamp.
 
 Potential fields:
 
-```text
-locationId
-timestamp
-windSpeed
-windDirection
-gustSpeed
-rain
-temperature
-waterLevel
-waterLevelTrend
-```
+- `locationId`
+- `timestamp`
+- `windSpeed`
+- `windDirection`
+- `gustSpeed`
+- `rain`
+- `temperature`
+- `waterLevel`
+- `waterLevelTrend`
 
 The exact fields will depend on the external APIs.
 
 Environmental data should eventually support both current conditions and historical analysis.
 
+Environmental conditions belong to the physical location rather than to an individual club.
+
 ---
 
-## 11. Recommendations
+## 12. Recommendations
 
 ### Planned collection
 
@@ -409,41 +476,35 @@ Recommendations will be generated from environmental conditions and rowing-speci
 
 Potential fields:
 
-```text
-locationId
-timestamp
-recommendation
-confidence
-bestWindowStart
-bestWindowEnd
-windStatus
-gustStatus
-waterLevelStatus
-rainStatus
-explanation
-```
+- `locationId`
+- `timestamp`
+- `recommendation`
+- `confidence`
+- `bestWindowStart`
+- `bestWindowEnd`
+- `windStatus`
+- `gustStatus`
+- `waterLevelStatus`
+- `rainStatus`
+- `explanation`
 
 Potential recommendation values:
 
-```text
-go
-caution
-noGo
-```
+- `go`
+- `caution`
+- `noGo`
 
 Potential confidence values:
 
-```text
-low
-medium
-high
-```
+- `low`
+- `medium`
+- `high`
 
 The recommendation should retain the contributing condition statuses and explanation so that users can understand why the recommendation was made.
 
 ---
 
-## 12. Routes
+## 13. Routes
 
 ### Planned collection
 
@@ -451,23 +512,23 @@ The recommendation should retain the contributing condition statuses and explana
 
 Potential fields:
 
-```text
-name
-locationId
-clubId
-distance
-estimatedDuration
-mapData
-description
-createdAt
-updatedAt
-```
+- `name`
+- `locationId`
+- `clubId`
+- `distance`
+- `estimatedDuration`
+- `mapData`
+- `description`
+- `createdAt`
+- `updatedAt`
 
 Routes may eventually be created or managed by clubs and/or users.
 
+Routes are associated with a physical location but may also be associated with a specific club.
+
 ---
 
-## 13. Hazards
+## 14. Hazards
 
 ### Planned collection
 
@@ -475,54 +536,29 @@ Routes may eventually be created or managed by clubs and/or users.
 
 Potential fields:
 
-```text
-title
-description
-locationId
-routeId
-severity
-status
-createdAt
-updatedAt
-```
+- `title`
+- `description`
+- `locationId`
+- `routeId`
+- `severity`
+- `status`
+- `createdAt`
+- `updatedAt`
 
 Potential severity values:
 
-```text
-info
-caution
-warning
-critical
-```
+- `info`
+- `caution`
+- `warning`
+- `critical`
 
 Hazards may eventually include both permanent and temporary information.
 
 ---
 
-## 14. Current Firestore Security
+## 15. Access & Permissions
 
-The current prototype uses the following Firestore security model:
-
-| Collection | Create | Read | Write | Delete |
-|---|---|---|---|---|
-| `clubs` | No One | Everyone | No One | No One |
-| `locations` | No One | Everyone | No One | No One |
-| `boats` | No One | Everyone | No One | No One |
-| `users` | No One | No One | No One | No One |
-
-This is a temporary prototype configuration.
-
-The `clubs`, `locations` and `boats` collections are currently public read-only data. This allows the app to display club, location and boat information while preventing changes through the application.
-
-The `users` collection is currently inaccessible because Firebase Authentication has not yet been enabled.
-
-Test documents can still be managed through the Firebase/FlutterFlow development environment.
-
----
-
-## 15. Future Access & Permissions
-
-The final security model should distinguish between club-managed data and user-private data.
+Firestore security rules should eventually distinguish between:
 
 ### Club-managed data
 
@@ -530,13 +566,17 @@ Examples:
 
 - Clubs
 - Boats
-- Club locations
+- Club-location relationships
 - Club routes
 - Club hazards
 
-Eventually, authorised club administrators should be able to create and manage these records.
+### Location data
 
-Regular users should generally have read-only access.
+Examples:
+
+- Physical location information
+- Environmental conditions
+- Location-level hazards
 
 ### User-private data
 
@@ -548,21 +588,11 @@ Examples:
 - Personal boat notes/reviews
 - Personal preferences
 
-Users should only be able to access and modify their own private data.
+Users should only be able to modify data they own or are authorised to manage.
 
-### Firebase Authentication
+A club should not automatically own the underlying physical location simply because it uses that location.
 
-Firebase Authentication will eventually be enabled to support authenticated users and enforce these permissions.
-
-The future Firestore rules should allow:
-
-- Users to access their own user data
-- Users to manage their own favourites
-- Users to manage their own personal boat notes/reviews
-- Club administrators to manage club-owned information
-- Regular users to read club-owned information without modifying it
-
-The exact security rules will be implemented when Firebase Authentication and the corresponding functionality are built.
+The exact security rules will be implemented as the corresponding functionality is built.
 
 ---
 
@@ -572,11 +602,9 @@ Records that require creation or update tracking should use Firestore timestamps
 
 Common fields:
 
-```text
-createdAt
-updatedAt
-timestamp
-```
+- `createdAt`
+- `updatedAt`
+- `timestamp`
 
 Server timestamps should be preferred where appropriate.
 
@@ -592,4 +620,14 @@ The database documentation should be updated whenever the actual Firestore struc
 
 The implemented Firestore structure should take precedence over earlier proposals in this document.
 
-Future database decisions should be documented here once they become sufficiently defined or are implemented.
+### Current architecture principle
+
+Physical entities and organisational relationships should be kept separate where appropriate.
+
+For example:
+
+- `locations` represents the physical rowing location.
+- `clubs` represents the rowing club.
+- `clubLocations` represents the relationship between a club and a location.
+
+This allows the same physical location to be used by multiple clubs without duplicating location records.
