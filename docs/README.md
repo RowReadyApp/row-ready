@@ -18,5 +18,9 @@ Row Ready is a rowing companion app that combines weather, river conditions, clu
 
 ## Project Documentation
 
-- `ROADMAP.md` — planned features and development phases
+- `PRD.md` — product requirements and planned functionality
+- `ROADMAP.md` — development phases and planned features
+- `DESIGN.md` — UI and design guidelines
+- `DATABASE.md` — Firestore database structure
+- `API.md` — external API documentation
 - `CHANGELOG.md` — development history and completed work
