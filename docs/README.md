@@ -6,7 +6,7 @@ Row Ready is a rowing companion app that combines weather, river conditions, clu
 
 ## Current Status
 
-🚧 MVP Development
+🚧 MVP Development — UI prototype and core infrastructure in place
 
 ## Technologies
 
@@ -15,3 +15,8 @@ Row Ready is a rowing companion app that combines weather, river conditions, clu
 - Cloud Firestore
 - Open-Meteo
 - Environment Agency API
+
+## Project Documentation
+
+- `ROADMAP.md` — planned features and development phases
+- `CHANGELOG.md` — development history and completed work
