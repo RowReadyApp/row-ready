@@ -50,3 +50,9 @@
 - Boat equipment and blade information
 - More detailed locations
 - Location favourites
+
+## v0.1.0
+
+- GitHub created
+- FlutterFlow project created
+- Firebase connected
