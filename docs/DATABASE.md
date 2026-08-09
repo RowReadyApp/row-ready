@@ -9,67 +9,44 @@ Row Ready uses:
 
 Firestore is the primary database for application data.
 
-The database should support:
+---
 
-- Users
-- Clubs
-- Locations
-- Boats
-- Routes
-- Hazards
-- User preferences
-- Favourites
-- Personal notes
-- Environmental conditions
-- Recommendations
+## 2. Current Database Status
+
+The Firestore database is connected to the FlutterFlow project.
+
+The following collections have currently been created:
+
+- `clubs`
+- `locations`
+- `boats`
+- `users`
+
+Test data has been added to verify the relationships between these collections.
+
+The following collections/features are planned but have not yet been implemented:
+
+- `conditions`
+- `recommendations`
+- `routes`
+- `hazards`
+- User favourites
+- Personal boat notes/reviews
 
 ---
 
-## 2. Database Principles
+## 3. Database Principles
 
 The database should:
 
 - Keep club-owned information separate from user-owned information
-- Avoid duplicating data where possible
-- Allow users to belong to one or more clubs in the future
+- Avoid unnecessary duplication
+- Use Document References for relationships between entities
 - Allow clubs to manage their own locations and boats
-- Allow users to maintain private preferences, favourites and notes
-- Support locations that are rivers, lakes, canals, reservoirs or other waterways
-- Allow environmental data to be associated with a location and time
-- Keep the structure flexible enough to support future recommendation and history features
-
----
-
-## 3. Users
-
-### Collection
-
-`users`
-
-Each document represents one Row Ready user.
-
-Potential fields:
-
-```text
-displayName
-email
-photoUrl
-units
-notificationsEnabled
-createdAt
-updatedAt
-```
-
-Future fields may include:
-
-```text
-clubIds
-favouriteLocationIds
-favouriteBoatIds
-rowingPreferences
-```
-
-User-specific information should only be accessible according to the appropriate permissions.
+- Allow users to maintain personal preferences, favourites and notes
+- Support different types of rowing locations, including rivers, lakes, canals and reservoirs
+- Support current and future historical environmental data
+- Remain flexible enough to support the recommendation engine
 
 ---
 
@@ -81,27 +58,25 @@ User-specific information should only be accessible according to the appropriate
 
 Each document represents a rowing club.
 
-Potential fields:
+### Current fields
 
 ```text
 name
 description
-location
 logoUrl
 createdAt
 updatedAt
 ```
 
-Future fields may include:
+### Example
 
 ```text
-contactInformation
-website
-adminUserIds
-memberUserIds
+name: Bedford Rowing Club
 ```
 
-Club-owned information should be controlled by authorised club users.
+A club can be associated with multiple locations and boats.
+
+Club membership and administrator permissions will be defined later.
 
 ---
 
@@ -113,13 +88,12 @@ Club-owned information should be controlled by authorised club users.
 
 Each document represents a rowing location.
 
-Potential fields:
+### Current fields
 
 ```text
 name
-area
 waterType
-clubIds
+clubId
 latitude
 longitude
 status
@@ -127,7 +101,21 @@ createdAt
 updatedAt
 ```
 
-Examples of `waterType`:
+### Field details
+
+`name`  
+The display name of the location.
+
+Example:
+
+```text
+River Great Ouse, Bedford
+```
+
+`waterType`  
+The type of waterway.
+
+Potential values:
 
 ```text
 river
@@ -137,9 +125,33 @@ reservoir
 other
 ```
 
-A location should not assume that the water body is always a river.
+`clubId`  
+A Document Reference to the associated document in the `clubs` collection.
 
-A location may be associated with one or more clubs where appropriate.
+`latitude` / `longitude`  
+Coordinates used for future weather and environmental API requests.
+
+`status`  
+Whether the location is currently active.
+
+Potential values:
+
+```text
+active
+inactive
+```
+
+### Example relationship
+
+```text
+clubs/{clubId}
+        ↑
+        │ Document Reference
+        │
+locations/{locationId}
+```
+
+A club may have multiple locations.
 
 ---
 
@@ -149,48 +161,88 @@ A location may be associated with one or more clubs where appropriate.
 
 `boats`
 
-Each document represents a boat.
+Each document represents a boat owned or managed by a club.
 
-Potential fields:
+### Current fields
 
 ```text
 name
 boatClass
 clubId
 locationId
-locationDetail
 availabilityStatus
 weightCategory
 rowingType
 coxed
+bladeType
 createdAt
 updatedAt
 ```
 
-Examples of `rowingType`:
+### Field details
+
+`name`  
+The current boat name/identifier.
+
+Example:
 
 ```text
-sculling
-sweep
+Single 1
 ```
 
-Examples of `availabilityStatus`:
+`boatClass`  
+The rowing boat classification.
+
+Examples:
+
+```text
+1x
+4x
+4-
+```
+
+`clubId`  
+A Document Reference to the associated club.
+
+`locationId`  
+A Document Reference to the boat's associated location.
+
+`availabilityStatus`  
+Whether the boat is currently available.
+
+Potential values:
 
 ```text
 available
 unavailable
 ```
 
-`locationDetail` may contain information such as:
+`weightCategory`  
+The intended rower weight category where applicable. The exact categories will be defined later.
+
+`rowingType`  
+The type of rowing.
+
+Potential values:
 
 ```text
-hangar
-rack
-row
-bay
+sculling
+sweep
 ```
 
-The boat name may eventually be generated automatically from the boat class and boat ID.
+`coxed`  
+Boolean indicating whether the boat is coxed.
+
+`bladeType`  
+Information about the blades/setup used with the boat.
+
+This field is currently flexible and may become more structured in the future.
+
+### Future boat improvements
+
+The Add Boat interface should eventually allow the user to select a standard boat class from a dropdown.
+
+The application should then automatically determine the corresponding boat description.
 
 For example:
 
@@ -199,46 +251,76 @@ For example:
 4- → Four, coxless
 ```
 
-The exact boat-class mapping will be defined separately when the Add Boat functionality is implemented.
+The full boat-class mapping will be defined when the Add Boat functionality is implemented.
 
 ---
 
-## 7. Boat Favourites
+## 7. Users
 
-Favourite boats are personal to each user.
+### Collection
 
-A user's favourite boats should not change the underlying club boat record.
+`users`
 
-Potential structure:
+Each document represents a Row Ready user.
+
+### Current fields
+
+```text
+displayName
+email
+photoUrl
+units
+notificationsEnabled
+createdAt
+updatedAt
+```
+
+Club membership will be designed separately rather than adding a `clubIds` array at this stage.
+
+---
+
+## 8. User Favourites
+
+Favourites are personal to each user and should not modify the underlying club-owned record.
+
+### Favourite locations
+
+Planned structure:
+
+```text
+users/{userId}/favouriteLocations/{locationId}
+```
+
+### Favourite boats
+
+Planned structure:
 
 ```text
 users/{userId}/favouriteBoats/{boatId}
 ```
 
-This allows the club to maintain the official boat information while each user maintains their own favourites.
-
-The Boats page should eventually allow:
+The Boats page should eventually allow users to switch between:
 
 - Club Boats
 - Favourite Boats
 
-to be selected using a toggle/filter.
+This is particularly useful when clubs have large fleets and users do not want to browse every boat.
 
 ---
 
-## 8. Personal Boat Notes / Reviews
+## 9. Personal Boat Notes / Reviews
 
 Boat notes are private to the individual user.
 
-They are not intended to be public club reviews.
+They are not public club reviews.
 
-Potential structure:
+### Planned structure
 
 ```text
 users/{userId}/boatNotes/{boatId}
 ```
 
-Potential fields:
+Potential fields include:
 
 ```text
 comfortable
@@ -250,8 +332,6 @@ createdAt
 updatedAt
 ```
 
-The exact fields may be refined later.
-
 Examples of personal observations:
 
 - Comfortable
@@ -260,75 +340,17 @@ Examples of personal observations:
 - Good fit
 - Personal setup preference
 
----
-
-## 9. Routes
-
-### Collection
-
-`routes`
-
-Each document represents a rowing route.
-
-Potential fields:
-
-```text
-name
-locationId
-clubId
-distance
-estimatedDuration
-mapData
-description
-createdAt
-updatedAt
-```
-
-Routes may eventually be created or managed by clubs and/or users.
+The exact fields will be refined when this functionality is implemented.
 
 ---
 
-## 10. Hazards
+## 10. Environmental Conditions
 
-### Collection
-
-`hazards`
-
-Each document represents a hazard or warning associated with a location or route.
-
-Potential fields:
-
-```text
-title
-description
-locationId
-routeId
-severity
-status
-createdAt
-updatedAt
-```
-
-Potential severity values:
-
-```text
-info
-caution
-warning
-critical
-```
-
-Hazards may eventually include temporary and permanent information.
-
----
-
-## 11. Environmental Conditions
-
-Environmental data should eventually be associated with a location and a timestamp.
-
-### Collection
+### Planned collection
 
 `conditions`
+
+Environmental data will eventually be associated with a location and timestamp.
 
 Potential fields:
 
@@ -344,19 +366,19 @@ waterLevel
 waterLevelTrend
 ```
 
-The exact fields will depend on the data returned by the external APIs.
+The exact fields will depend on the external APIs.
 
-Environmental data should be stored in a way that can support both current conditions and future historical analysis.
+Environmental data should eventually support both current conditions and historical analysis.
 
 ---
 
-## 12. Recommendations
+## 11. Recommendations
 
-Recommendations are generated from environmental conditions and rowing-specific rules.
-
-### Collection
+### Planned collection
 
 `recommendations`
+
+Recommendations will be generated from environmental conditions and rowing-specific rules.
 
 Potential fields:
 
@@ -390,61 +412,77 @@ medium
 high
 ```
 
-The recommendation should retain the underlying condition statuses and explanation so that the user can understand why a recommendation was made.
+The recommendation should retain the contributing condition statuses and explanation so that users can understand why the recommendation was made.
 
 ---
 
-## 13. Favourites
+## 12. Routes
 
-Favourite locations are personal to each user.
+### Planned collection
 
-Potential structure:
+`routes`
+
+Potential fields:
 
 ```text
-users/{userId}/favouriteLocations/{locationId}
+name
+locationId
+clubId
+distance
+estimatedDuration
+mapData
+description
+createdAt
+updatedAt
 ```
 
-Favourite status should not modify the underlying location record.
+Routes may eventually be created or managed by clubs and/or users.
 
 ---
 
-## 14. Club Ownership
+## 13. Hazards
 
-Club-owned resources should be associated with the relevant club.
+### Planned collection
 
-Examples:
+`hazards`
+
+Potential fields:
 
 ```text
-boats → clubId
-locations → clubIds
-routes → clubId
-hazards → clubId where applicable
+title
+description
+locationId
+routeId
+severity
+status
+createdAt
+updatedAt
 ```
 
-Club administrators should eventually be able to create and update club-owned information.
+Potential severity values:
 
-Regular users should not be able to modify official club information unless they have the appropriate permissions.
+```text
+info
+caution
+warning
+critical
+```
+
+Hazards may eventually include both permanent and temporary information.
 
 ---
 
-## 15. Access & Permissions
+## 14. Access & Permissions
 
 Firestore security rules should eventually distinguish between:
-
-### Public / general app data
-
-Examples:
-
-- Locations
-- Environmental conditions
-- Recommendations
 
 ### Club-managed data
 
 Examples:
 
-- Club information
+- Clubs
 - Boats
+- Club locations
 - Club routes
 - Club hazards
 
@@ -460,11 +498,13 @@ Examples:
 
 Users should only be able to modify data they own or are authorised to manage.
 
+The exact security rules will be implemented as the corresponding functionality is built.
+
 ---
 
-## 16. Timestamps
+## 15. Timestamps
 
-Firestore timestamps should be used for records that require creation or update tracking.
+Records that require creation or update tracking should use Firestore timestamps.
 
 Common fields:
 
@@ -478,18 +518,12 @@ Server timestamps should be preferred where appropriate.
 
 ---
 
-## 17. Future Considerations
+## 16. Database Development Approach
 
-The database may eventually need to support:
+The database will be implemented incrementally alongside the application.
 
-- Historical environmental conditions
-- Historical recommendations
-- Notifications
-- User rowing activity
-- Club announcements
-- Community reports
-- Route tracking
-- Wearable integrations
-- Analytics
+New collections should only be created when the corresponding functionality is being implemented or when there is a clear need for the collection.
 
-The schema should not be over-engineered for these features until their requirements are defined.
+The database documentation should be updated whenever the actual Firestore structure changes.
+
+The implemented Firestore structure should take precedence over earlier proposals in this document.
