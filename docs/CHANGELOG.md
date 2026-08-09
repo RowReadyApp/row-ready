@@ -1,3 +1,22 @@
+## v0.2.2 — Club-specific Locations
+
+### Added
+
+- Added `clubLocations` as the relationship collection between clubs and physical locations
+- Locations page now filters `clubLocations` by the selected club
+- Club dropdown controls the active `selectedClub` reference
+- Multiple clubs can use the same physical location
+- Added current UI-facing `locationName` and `waterType` fields to `clubLocations`
+- Location cards display location name, water type and status from the current `clubLocations` document
+
+### Design decisions
+
+- Physical locations remain independent of clubs
+- Club/location relationships are represented by separate `clubLocations` documents
+- The location list is driven by `selectedClub`
+- `locationId` remains the canonical reference to the physical location
+- `locationName` and `waterType` are currently duplicated in `clubLocations` for FlutterFlow UI simplicity and are candidates for future cleanup
+
 ## v0.2.1
 
 - Firestore database structure created
