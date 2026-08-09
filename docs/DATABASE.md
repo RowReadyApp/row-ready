@@ -13,25 +13,34 @@ Firestore is the primary database for application data.
 
 ## 2. Current Database Status
 
-The Firestore database is connected to the FlutterFlow project.
+Firebase and Cloud Firestore are connected to the FlutterFlow project.
 
-The following collections have currently been created:
+The following Firestore collections are currently implemented:
 
 - `clubs`
 - `locations`
 - `boats`
 - `users`
 
-Test data has been added to verify the relationships between these collections.
+Test documents have been created to verify the database structure and relationships.
 
-The following collections/features are planned but have not yet been implemented:
+Current relationships include:
+
+- Locations reference a club using a Document Reference.
+- Boats reference a club using a Document Reference.
+- Boats reference a location using a Document Reference.
+
+The following are planned but not yet implemented:
 
 - `conditions`
 - `recommendations`
 - `routes`
 - `hazards`
-- User favourites
+- Favourite locations
+- Favourite boats
 - Personal boat notes/reviews
+- Firebase Authentication
+- Granular user and club-admin permissions
 
 ---
 
@@ -76,7 +85,7 @@ name: Bedford Rowing Club
 
 A club can be associated with multiple locations and boats.
 
-Club membership and administrator permissions will be defined later.
+Club membership and administrator permissions will be implemented later using Firebase Authentication and appropriate Firestore security rules.
 
 ---
 
@@ -129,7 +138,7 @@ other
 A Document Reference to the associated document in the `clubs` collection.
 
 `latitude` / `longitude`  
-Coordinates used for future weather and environmental API requests.
+Coordinates used for future weather and environmental API requests. These may currently be left empty until location coordinates are populated.
 
 `status`  
 Whether the location is currently active.
@@ -182,7 +191,7 @@ updatedAt
 ### Field details
 
 `name`  
-The current boat name/identifier.
+The current boat name or identifier.
 
 Example:
 
@@ -234,7 +243,7 @@ sweep
 Boolean indicating whether the boat is coxed.
 
 `bladeType`  
-Information about the blades/setup used with the boat.
+Information about the blades or blade setup used with the boat.
 
 This field is currently flexible and may become more structured in the future.
 
@@ -242,7 +251,7 @@ This field is currently flexible and may become more structured in the future.
 
 The Add Boat interface should eventually allow the user to select a standard boat class from a dropdown.
 
-The application should then automatically determine the corresponding boat description.
+The application should then automatically determine the corresponding boat description and characteristics.
 
 For example:
 
@@ -252,6 +261,13 @@ For example:
 ```
 
 The full boat-class mapping will be defined when the Add Boat functionality is implemented.
+
+Other planned improvements include:
+
+- Favourite boats
+- Club Boats / Favourite Boats toggle
+- More structured blade information
+- Refined rower weight categories
 
 ---
 
@@ -275,7 +291,18 @@ createdAt
 updatedAt
 ```
 
+Firebase Authentication has not yet been enabled.
+
+User access is therefore currently restricted by the Firestore security rules.
+
 Club membership will be designed separately rather than adding a `clubIds` array at this stage.
+
+Future user-specific functionality will include:
+
+- Favourite locations
+- Favourite boats
+- Personal boat notes/reviews
+- User preferences
 
 ---
 
@@ -472,9 +499,30 @@ Hazards may eventually include both permanent and temporary information.
 
 ---
 
-## 14. Access & Permissions
+## 14. Current Firestore Security
 
-Firestore security rules should eventually distinguish between:
+The current prototype uses the following Firestore security model:
+
+| Collection | Create | Read | Write | Delete |
+|---|---|---|---|---|
+| `clubs` | No One | Everyone | No One | No One |
+| `locations` | No One | Everyone | No One | No One |
+| `boats` | No One | Everyone | No One | No One |
+| `users` | No One | No One | No One | No One |
+
+This is a temporary prototype configuration.
+
+The `clubs`, `locations` and `boats` collections are currently public read-only data. This allows the app to display club, location and boat information while preventing changes through the application.
+
+The `users` collection is currently inaccessible because Firebase Authentication has not yet been enabled.
+
+Test documents can still be managed through the Firebase/FlutterFlow development environment.
+
+---
+
+## 15. Future Access & Permissions
+
+The final security model should distinguish between club-managed data and user-private data.
 
 ### Club-managed data
 
@@ -486,6 +534,10 @@ Examples:
 - Club routes
 - Club hazards
 
+Eventually, authorised club administrators should be able to create and manage these records.
+
+Regular users should generally have read-only access.
+
 ### User-private data
 
 Examples:
@@ -496,13 +548,25 @@ Examples:
 - Personal boat notes/reviews
 - Personal preferences
 
-Users should only be able to modify data they own or are authorised to manage.
+Users should only be able to access and modify their own private data.
 
-The exact security rules will be implemented as the corresponding functionality is built.
+### Firebase Authentication
+
+Firebase Authentication will eventually be enabled to support authenticated users and enforce these permissions.
+
+The future Firestore rules should allow:
+
+- Users to access their own user data
+- Users to manage their own favourites
+- Users to manage their own personal boat notes/reviews
+- Club administrators to manage club-owned information
+- Regular users to read club-owned information without modifying it
+
+The exact security rules will be implemented when Firebase Authentication and the corresponding functionality are built.
 
 ---
 
-## 15. Timestamps
+## 16. Timestamps
 
 Records that require creation or update tracking should use Firestore timestamps.
 
@@ -518,7 +582,7 @@ Server timestamps should be preferred where appropriate.
 
 ---
 
-## 16. Database Development Approach
+## 17. Database Development Approach
 
 The database will be implemented incrementally alongside the application.
 
@@ -527,3 +591,5 @@ New collections should only be created when the corresponding functionality is b
 The database documentation should be updated whenever the actual Firestore structure changes.
 
 The implemented Firestore structure should take precedence over earlier proposals in this document.
+
+Future database decisions should be documented here once they become sufficiently defined or are implemented.
