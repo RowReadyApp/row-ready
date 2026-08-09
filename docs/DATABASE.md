@@ -184,9 +184,13 @@ It allows multiple clubs to use the same location.
 
 - `clubId`
 - `locationId`
+- `locationName`
+- `waterType`
 - `status`
 - `createdAt`
 - `updatedAt`
+
+`locationName` and `waterType` are currently duplicated from the referenced `locations` document to simplify the FlutterFlow UI. The `locationId` reference remains the canonical link to the physical location. This duplication may be removed in a future cleanup if the UI can reliably read the referenced location document directly.
 
 ### Field details
 
@@ -197,6 +201,14 @@ A Document Reference to the associated document in the `clubs` collection.
 `locationId`
 
 A Document Reference to the associated document in the `locations` collection.
+
+`locationName`
+
+The display name of the associated physical location. This currently mirrors `locations.name` for UI display.
+
+`waterType`
+
+The type of the associated physical location. This currently mirrors `locations.waterType` for UI display.
 
 `status`
 
@@ -221,6 +233,8 @@ The relationship is represented by a `clubLocations` document with:
 
 - `clubId` → `clubs/{clubId}`
 - `locationId` → `locations/{locationId}`
+- `locationName` → `River Great Ouse, Bedford`
+- `waterType` → `river`
 
 ### Multiple clubs using one location
 
@@ -234,7 +248,7 @@ River Great Ouse, Bedford
 
 Each club has its own `clubLocations` document.
 
-This allows the same physical location to be associated with multiple clubs without duplicating the location itself.
+This allows the same physical location to be associated with multiple clubs without duplicating the physical location record itself.
 
 ### Future possibilities
 
